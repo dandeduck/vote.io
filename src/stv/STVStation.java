@@ -1,150 +1,184 @@
 package stv;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
+import java.util.*;
 
 public class STVStation {
-	private int mWinnersCount;
-	private Queue<Ballot> mBallots;
-	private Queue<Result> mResults;
-	private Queue<Option> mWinners;
+	private int mTotalVotes;
 
-	public STVStation(Queue<Option> options, Queue<Ballot> ballots) {
-		mWinners = new ArrayDeque<>();
-		mBallots = ballots;
-		mResults = new ArrayDeque<>();
+	private Map<Option, Queue<Ballot>> mResults;
 
-		while(!options.isEmpty())
-			mResults.add(new Result(options.poll()));
+	public STVStation(Queue<Ballot> ballots) {
+		mTotalVotes = ballots.size();
 
-
-		mWinnersCount = mResults.size();
+		distributeVotes(ballots);
 	}
 
+	private void distributeVotes(Queue<Ballot> ballots) {
+		for(Ballot ballot : ballots) {
+			Option key = ballot.getFirst();
 
-	
-	public Queue<Option> calcResults() {
-		while(mWinners.size() < mWinnersCount) {
-			countAndSortVotes();
-			removeWinners();
-			removeLooser();
-		}
-		
-		return mWinners;
-	}
-	
-	private void removeWinners() {
-		Option winner = findWinners().getOption();
+			if(!mResults.containsKey(key))
+				mResults.put(key,new ArrayDeque<>());
 
-		while(winner != null) {
-			redestributeWinnerVotes(winner);
-			mResults.remove(winner);
+			mResults.get(key).add(ballot);
 		}
 	}
-	
-	private Result findWinners() {
-		Queue<Result> tmp = mResults;
-		
-		while(!tmp.isEmpty()) {
-			Result curr = tmp.poll();
-			if(curr.getVotes() >= 1/mWinnersCount * mBallots.size())
-				return curr;
-		}
-		
-		return null;
-	}
-	
-	private void removeLooser() {
-		Option looser = findLooser();
-		mResults.remove(new Result(looser));
-		redestributeLooserVotes(looser);
-	}
-	
-	private void redestributeLooserVotes(Option option) {
-		Queue<Ballot> tmp = new ArrayDeque<>();
-		
-		while(!mBallots.isEmpty()) {
-			Ballot curr = mBallots.poll();
-		
-			if(curr.isFirst(option)) {
-				curr.move();
-				tmp.add(curr);
+
+	private List<Queue<Ballot>> extractGroups(Queue<Ballot> ballots) {
+		List<Queue<Ballot>> groups = new ArrayList<>();
+
+		for(Ballot ballot : ballots) {
+			if(isInGroups(groups,ballot))
+				for(Queue<Ballot> group : groups) {
+					if (group.contains(ballot))
+						group.add(ballot);
+				}
+			else {
+				groups.add(new ArrayDeque<>());
+				groups.get(groups.size()-1).add(ballot);
 			}
 		}
-		mBallots.addAll(tmp);
-	}
-	
-	private void redestributeWinnerVotes(Option option) {
-		Queue<Ballot> tmp = new ArrayDeque<Ballot>();
-		int count = 1;
 
-		while(!mBallots.isEmpty()) {
-			Ballot curr = mBallots.poll();
-			
-			if(curr.isFirst(option)) {
-				if(count < 1/mWinnersCount * mBallots.size())
-					curr = null;
-				else
-					curr.move();
-				tmp.add(curr);
-				count++;
+		return groups;
+	}
+
+	private boolean isInGroups(List<Queue<Ballot>> groups, Ballot ballot) {
+		for(Queue<Ballot> group : groups) {
+			if(group.contains(ballot))
+				return true;
+		}
+		return false;
+	}
+
+	private void shuffleBallots(Option option) {
+		List<Queue<Ballot>> ballotGroups = extractGroups(mResults.get(option));
+		Queue<Ballot> result = new ArrayDeque<>();
+
+		while(!isEmpty(ballotGroups)) {
+			for(Queue<Ballot> group : ballotGroups) {
+				while(isTurn(ballotGroups,group.size())) {
+					result.add(group.poll());
+				}
 			}
 		}
-		mBallots.addAll(tmp);
+		mResults.replace(option, reverseQueue(result));
 	}
-	
-	private Option findLooser() {
-		Result looser = null;
-		Queue<Result> tmp = mResults;
-		
-		while(!tmp.isEmpty()) {
-			Result curr = tmp.poll();
-			
-			if(looser.getVotes() < curr.getVotes())
-				looser = curr;
+
+	private Queue<Ballot> reverseQueue(Queue<Ballot> queue) {
+		Stack<Ballot> tmp  = new Stack<>();
+
+		while(!queue.isEmpty()) {
+			tmp.add(queue.poll());
+		} for(Ballot option : tmp) {
+			queue.add(option);
 		}
-		
-		return looser.getOption();
+		return queue;
 	}
-	
-	private void countAndSortVotes() {
-		Queue<Result> tmp = mResults;
-		
-		while(!tmp.isEmpty()) {
-			countVotes(tmp.poll());
+
+	private boolean isEmpty(List<Queue<Ballot>> set) {
+		for(Queue<Ballot> items : set) {
+			if(!items.isEmpty())
+				return false;
 		}
-		sort();
+		return true;
 	}
-	
-	private void sort() {
-		Queue<Result> sorted = new ArrayDeque<>();
-		Queue<Result> tmp;
-		
-		while(!mResults.isEmpty()) {
-			Result max = null;
-			tmp = mResults;
-			
-			while(!tmp.isEmpty()) {
-				 Result curr = tmp.poll();
-				
-				if(curr.getVotes() > max.getVotes())
-					max = curr;
+
+	private boolean isTurn(List<Queue<Ballot>> groups, int groupSize) {
+		for(Queue<Ballot> group : groups) {
+			if (group.size() > groupSize)
+				return false;
+		}
+		return true;
+	}
+
+	private int getVotes(Option option) {
+		return mResults.get(option).size();
+	}
+
+	private void removeExtraVotes(Option option, int positions) {
+		int totalVotes = getVotes(option);
+		int extraVotes =  (int) (totalVotes - mTotalVotes * (1.0/positions));
+
+		while(getVotes(option) > extraVotes) {
+			mResults.get(option).poll();
+		}
+	}
+
+	private Queue<Ballot> removeBiggestLoser() {
+		Option loser = null;
+
+		for(Option key : mResults.keySet()) {
+			if(loser == null || getVotes(key) < getVotes(loser)) {
+				loser = key;
 			}
-			sorted.add(max);
-			mResults.remove(max);
 		}
-		
-		while(!sorted.isEmpty()) {
-			mResults.add(sorted.poll());
+
+		Queue<Ballot> lefoverVotes = mResults.get(loser);
+		mResults.remove(loser);
+
+		return lefoverVotes;
+	}
+
+	private void redistributeVotes(Queue<Ballot> ballots) {
+		for(Ballot ballot : ballots) {
+			Option option = ballot.getFirst();
+
+			if(option != null)
+				mResults.get(option).add(ballot);
 		}
 	}
-	
-	private void countVotes(Result result) {
-		Queue<Ballot> tmp = mBallots;
-		
-		while(!tmp.isEmpty()) {
-			if (tmp.poll().isFirst(result.getOption()))
-				result.addVote();
+
+	private Option getWinner(int positions) {
+		Option biggest = getBiggest();
+		int winningAmount = (int) (mTotalVotes * (1.0 / (double) positions));
+
+		if(getTotatlVotes() <= winningAmount || mResults.get(biggest).size() >= winningAmount)
+			return biggest;
+		else
+			return null;
+	}
+
+	private int getTotatlVotes() {
+		int total = 0;
+
+		for(Option option : mResults.keySet()) {
+			total += mResults.get(option).size();
 		}
+		return total;
+	}
+
+	private Option getBiggest() {
+		Option max = null;
+
+		for(Option option : mResults.keySet()) {
+			if (max == null || mResults.get(option).size() > mResults.get(max).size())
+				max = option;
+		}
+		return max;
+	}
+
+	public Queue<Option> calculate(int positions) {
+		Set<Option> candidates = mResults.keySet();
+		Queue<Option> winners = new ArrayDeque<>();
+
+		if(positions >= candidates.size())
+			return new ArrayDeque<>(candidates);
+
+		while(winners.size() < positions) {
+			Option winner = getWinner(positions);
+			Queue<Ballot> redistributeVotes;
+
+			if(winner != null) {
+				winners.add(winner);
+				shuffleBallots(winner);
+				removeExtraVotes(winner,positions);
+				redistributeVotes = mResults.get(winner);
+
+			} else {
+				redistributeVotes = removeBiggestLoser();
+			}
+			redistributeVotes(redistributeVotes);
+		}
+		return winners;
 	}
 }

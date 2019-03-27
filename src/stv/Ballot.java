@@ -54,7 +54,6 @@ public class Ballot {
 		} for(Option option : tmp) {
 			queue.add(option);
 		}
-		
 		return queue;
 	}
 	
@@ -74,5 +73,9 @@ public class Ballot {
 	
 	public boolean isFirst(Option option) {
 		return mOptions.peek().equals(option);
+	}
+
+	public Option getFirst() {
+		return mOptions.peek();
 	}
 }
