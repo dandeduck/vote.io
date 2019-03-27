@@ -1,10 +1,10 @@
-package Backend;
+package stv;
 
 public class Option {
 	private String mOption;
-	private short mPlace;
+	private int mPlace;
 	
-	public Option(String option, short place) {
+	public Option(String option, int place) {
 		mOption = option;
 		try {
 			setPlace(place);
@@ -17,7 +17,7 @@ public class Option {
 		mOption = option;
 	}
 	
-	public short getPlace() {
+	public int getPlace() {
 		return mPlace;
 	}
 	
@@ -26,7 +26,7 @@ public class Option {
 		return mOption;
 	}
 	
-	protected void setPlace(short place) throws Exception {
+	protected void setPlace(int place) throws Exception {
 		if(place <= 0)
 			throw new Exception("Illegal place value");
 		mPlace = place;

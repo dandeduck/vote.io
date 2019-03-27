@@ -1,4 +1,4 @@
-package Backend;
+package stv;
 
 import java.util.ArrayList;
 import java.util.Queue;
@@ -26,7 +26,7 @@ public class Ballot {
 			Option option = tmp.poll();
 			
 			try {
-				option.setPlace((short) (option.getPlace()-1));
+				option.setPlace(option.getPlace()-1);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -58,12 +58,12 @@ public class Ballot {
 		return queue;
 	}
 	
-	public short getLastPlace() {
+	public int getLastPlace() {
 		Queue<Option> tmp = mOptions;
-		short last = 1;
+		int last = 1;
 		
 		while(tmp.isEmpty()) {
-			short curr  = tmp.poll().getPlace();
+			int curr  = tmp.poll().getPlace();
 			
 			if(curr > last)
 				last = curr;
