@@ -165,6 +165,11 @@ public class STVStation {
 		return max.get();
 	}
 
+	private void move(Queue<Ballot> ballots) {
+		for(Ballot ballot : ballots)
+			ballot.move();
+	}
+
 	public Queue<Option> calculate(int positions) {
 		Set<Option> candidates = mResults.keySet();
 		Queue<Option> winners = new ArrayDeque<>();
@@ -182,9 +187,10 @@ public class STVStation {
 				removeExtraVotes(winner,positions);
 				redistributeVotes = mResults.get(winner);
 
-			} else {
+			} else
 				redistributeVotes = removeBiggestLoser();
-			}
+
+			move(redistributeVotes);
 			redistributeVotes(redistributeVotes);
 		}
 		return winners;

@@ -56,18 +56,18 @@ public class Ballot {
 		}
 		return queue;
 	}
-	
+
 	public int getLastPlace() {
 		Queue<Option> tmp = mOptions;
 		int last = 1;
-		
+
 		while(tmp.isEmpty()) {
 			int curr  = tmp.poll().getPlace();
-			
+
 			if(curr > last)
 				last = curr;
 		}
-		
+
 		return last;
 	}
 	
