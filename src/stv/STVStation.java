@@ -1,6 +1,8 @@
 package stv;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class STVStation {
 	private int mTotalVotes;
@@ -8,6 +10,7 @@ public class STVStation {
 	private Map<Option, Queue<Ballot>> mResults;
 
 	public STVStation(Queue<Ballot> ballots) {
+		mResults = new HashMap<>();
 		mTotalVotes = ballots.size();
 
 		distributeVotes(ballots);
@@ -69,9 +72,7 @@ public class STVStation {
 
 		while(!queue.isEmpty()) {
 			tmp.add(queue.poll());
-		} for(Ballot option : tmp) {
-			queue.add(option);
-		}
+		} queue.addAll(tmp);
 		return queue;
 	}
 
@@ -105,18 +106,18 @@ public class STVStation {
 	}
 
 	private Queue<Ballot> removeBiggestLoser() {
-		Option loser = null;
+		AtomicReference<Option> loser = new AtomicReference<>();
 
 		for(Option key : mResults.keySet()) {
-			if(loser == null || getVotes(key) < getVotes(loser)) {
-				loser = key;
+			if(loser.get() == null || getVotes(key) < getVotes(loser.get())) {
+				loser.set(key);
 			}
 		}
 
-		Queue<Ballot> lefoverVotes = mResults.get(loser);
-		mResults.remove(loser);
+		Queue<Ballot> leftoverVotes = mResults.get(loser.get());
+		mResults.remove(loser.get());
 
-		return lefoverVotes;
+		return leftoverVotes;
 	}
 
 	private void redistributeVotes(Queue<Ballot> ballots) {
@@ -139,22 +140,22 @@ public class STVStation {
 	}
 
 	private int getTotatlVotes() {
-		int total = 0;
+		AtomicInteger total = new AtomicInteger();
 
 		for(Option option : mResults.keySet()) {
-			total += mResults.get(option).size();
+			total.addAndGet(mResults.get(option).size());
 		}
-		return total;
+		return total.get();
 	}
 
 	private Option getBiggest() {
-		Option max = null;
+		AtomicReference<Option> max = new AtomicReference<>();
 
 		for(Option option : mResults.keySet()) {
-			if (max == null || mResults.get(option).size() > mResults.get(max).size())
-				max = option;
+			if (max.get() == null || mResults.get(option).size() > mResults.get(max.get()).size())
+				max.set(option);
 		}
-		return max;
+		return max.get();
 	}
 
 	public Queue<Option> calculate(int positions) {
