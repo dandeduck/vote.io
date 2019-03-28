@@ -12,8 +12,8 @@ public class Main {
         Queue<Ballot> ballots = new ArrayDeque<>();
 
         for(int i = 0; i < 60; ++i) {
-            Ballot ballot = new Ballot(new Option("Trump",2,4), new Option("Hillari",1,4), new Option("Tom",3,4));
-            Ballot ballot1 = new Ballot(new Option("Trump",1,4), new Option("Hillari",3,4), new Option("Tom",2,4));
+            Ballot ballot = new Ballot(new Option("Trump",3,4), new Option("Hillari",1,4), new Option("Tom",2,4));
+            Ballot ballot1 = new Ballot(new Option("Trump",1,4));
             ballots.add(ballot);
             ballots.add(ballot1);
         }
@@ -24,6 +24,6 @@ public class Main {
         }
 
         station.setBallots(ballots,"Trump","Hillari","Tom","MaMan");
-        System.out.println(station.calculate(3));
+        System.out.println(station.calculate(2));
     }
 }

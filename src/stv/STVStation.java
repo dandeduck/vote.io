@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class STVStation {
 	private int mTotalVotes;
-	private int mCandidates;
 
 	private Map<String, Queue<Ballot>> mResults;
 
@@ -25,7 +24,6 @@ public class STVStation {
 		ensureEmptyCandidates(candidates);
 
 		mTotalVotes = ballots.size();
-		mCandidates = candidates.length;
 	}
 
 	public void ensureEmptyCandidates(String... candidates) {
@@ -115,11 +113,11 @@ public class STVStation {
 		return mResults.get(option).size();
 	}
 
-	private void removeExtraVotes(String option) {
+	private void removeExtraVotes(String option, int winningPositions) {
 		int totalVotes = getVotes(option);
-		int extraVotes = (int) (totalVotes - mTotalVotes * (1.0 / (double) mCandidates));
+		int extraVotes = (int) (totalVotes - mTotalVotes * (1.0 / (double) winningPositions));
 
-		while(getVotes(option) > extraVotes) {
+		while(getVotes(option) > extraVotes && mResults.size() > 1) {
 			mResults.get(option).poll();
 		}
 	}
@@ -154,9 +152,9 @@ public class STVStation {
 		}
 	}
 
-	private String getWinner() {
+	private String getWinner(int winningPositions) {
 		String biggest = getBiggest();
-		int winningAmount = (int) (mTotalVotes * (1.0 / (double) mCandidates));
+		int winningAmount = (int) (mTotalVotes * (1.0 / (double) winningPositions));
 
 		if(mResults.size() == 1 || mResults.get(biggest).size() >= winningAmount)
 			return biggest;
@@ -179,24 +177,24 @@ public class STVStation {
 			ballot.move();
 	}
 
-	public Queue<String> calculate(int positions) {
+	public Queue<String> calculate(int winningPositions) {
 		Set<String> candidates = mResults.keySet();
 		Queue<String> winners = new ArrayDeque<>();
 
 		if(mResults.isEmpty())
 			return null; //Maybe throw a custom Exception here
 
-		if(positions >= candidates.size())
+		if(winningPositions >= candidates.size())
 			return new ArrayDeque<>(candidates);
 
-		while(winners.size() < positions) {
-			String winner = getWinner();
+		while(winners.size() < winningPositions) {
+			String winner = getWinner(winningPositions);
 			Queue<Ballot> redistributionVotes;
 
 			if(winner != null) {
 				winners.add(winner);
 				shuffleBallots(winner);
-				removeExtraVotes(winner);
+				removeExtraVotes(winner, winningPositions);
 				redistributionVotes = mResults.get(winner);
 				mResults.remove(winner);
 

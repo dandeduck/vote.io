@@ -25,21 +25,14 @@ public class Ballot {
 
 			tmp.remove(place);
 			tmp.add(place, option);
-		}
-		removeNulls(tmp);
+		} while(tmp.remove(null)) {}
+
 		return new ArrayDeque<>(tmp);
 	}
 
 	private void initList(List<Option> options, int size) {
 		for(int i = 0; i < size; ++i) {
 			options.add(i, null);
-		}
-	}
-
-	private void removeNulls(List<Option> options) {
-		for(int i = 0; i < options.size(); ++i) {
-			if(options.get(i) == null)
-				options.remove(i);
 		}
 	}
 
