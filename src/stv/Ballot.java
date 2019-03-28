@@ -35,7 +35,7 @@ public class Ballot {
 	}
 
 	public Option getFirst() {
-		return mOptions.peek();
+		return mOptions.isEmpty() ? null : mOptions.peek();
 	}
 
 	public String toString() {
@@ -44,7 +44,8 @@ public class Ballot {
 		for(Option option :mOptions) {
 			options += option.getOption() + ",";
 		}
-		options = options.substring(0,options.length()-1);
+		if(options.contains(","))
+			options = options.substring(0,options.length()-1);
 
 		return options;
 	}

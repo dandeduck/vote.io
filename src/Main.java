@@ -12,16 +12,16 @@ public class Main {
         Queue<Ballot> ballots = new ArrayDeque<>();
 
         for(int i = 0; i < 60; ++i) {
-            Ballot ballot = new Ballot(new Option("Trump",1,2), new Option("Hillari",2,2));
+            Ballot ballot = new Ballot(new Option("Trump",2,3), new Option("Hillari",1,3), new Option("Tom",3,3));
             ballots.add(ballot);
         }
 
         for(int i = 0; i < 40; ++i) {
-            Ballot ballot = new Ballot(new Option("Trump",2,2), new Option("Hillari",1,2));
+            Ballot ballot = new Ballot(new Option("Trump",3,3), new Option("Hillari",2,3), new Option("Tom",1,3));
             ballots.add(ballot);
         }
 
-        station.setBallots(ballots);
-        System.out.println(station.calculate(1));
+        station.setBallots(ballots,"Trump","Hillari","Tom");
+        System.out.println(station.calculate(2));
     }
 }

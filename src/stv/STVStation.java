@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class STVStation {
 	private int mTotalVotes;
+	private int mCandidates;
 
 	private Map<String, Queue<Ballot>> mResults;
 
@@ -20,9 +21,19 @@ public class STVStation {
 		mResults = new HashMap<>();
 	}
 
-	public void setBallots(Queue<Ballot> ballots) {
+	public void setBallots(Queue<Ballot> ballots, String... candidates) {
 		distributeVotes(ballots);
+		ensureEmptyCandidates(candidates);
+
 		mTotalVotes = ballots.size();
+		mCandidates = candidates.length;
+	}
+
+	public void ensureEmptyCandidates(String... candidates) {
+		for(String candidate : candidates) {
+			if(!mResults.containsKey(candidate))
+				mResults.put(candidate,new ArrayDeque<>());
+		}
 	}
 
 	private void distributeVotes(Queue<Ballot> ballots) {
@@ -40,35 +51,31 @@ public class STVStation {
 		List<Queue<Ballot>> groups = new ArrayList<>();
 
 		for(Ballot ballot : ballots) {
-			if(isInGroups(groups,ballot))
-				for(Queue<Ballot> group : groups) {
-					if (group.contains(ballot))
-						group.add(ballot);
-				}
-			else {
+			Queue<Ballot> group = getGroup(groups, ballot);
+
+			try {
+				group.add(ballot);
+			} catch (NullPointerException e) {
 				groups.add(new ArrayDeque<>());
 				groups.get(groups.size()-1).add(ballot);
 			}
 		}
-
 		return groups;
 	}
 
-	private boolean isInGroups(List<Queue<Ballot>> groups, Ballot ballot) {
+	private Queue<Ballot> getGroup(List<Queue<Ballot>> groups, Ballot ballot) {
 		for(Queue<Ballot> group : groups) {
 			for(Ballot item : group) {
 				if(item.toString().equals(ballot.toString()))
-					return true;
+					return group;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	private void shuffleBallots(String option) {
 		List<Queue<Ballot>> ballotGroups = extractGroups(mResults.get(option));
 		Queue<Ballot> result = new ArrayDeque<>();
-
-		System.out.println(ballotGroups);
 
 		while(!isEmpty(ballotGroups)) {
 			for(Queue<Ballot> group : ballotGroups) {
@@ -109,9 +116,9 @@ public class STVStation {
 		return mResults.get(option).size();
 	}
 
-	private void removeExtraVotes(String option, int positions) {
+	private void removeExtraVotes(String option) {
 		int totalVotes = getVotes(option);
-		int extraVotes =  (int) (totalVotes - mTotalVotes * (1.0/positions));
+		int extraVotes = (int) (totalVotes - mTotalVotes * (1.0 / (double) mCandidates));
 
 		while(getVotes(option) > extraVotes) {
 			mResults.get(option).poll();
@@ -137,7 +144,7 @@ public class STVStation {
 		for(Ballot ballot : ballots) {
 			String  option = ballot.getFirst().getOption();
 
-			if(option != null)
+			if(option != null && mResults.containsKey(option))
 				mResults.get(option).add(ballot);
 		}
 	}
@@ -146,26 +153,17 @@ public class STVStation {
 		String biggest = getBiggest();
 		int winningAmount = (int) (mTotalVotes * (1.0 / (double) positions));
 
-		if(getTotalVotes() <= winningAmount || mResults.get(biggest).size() >= winningAmount)
+		if(mResults.size() == 1 || mResults.get(biggest).size() >= winningAmount)
 			return biggest;
 		else
 			return null;
-	}
-
-	private int getTotalVotes() {
-		AtomicInteger total = new AtomicInteger();
-
-		for(String option : mResults.keySet()) {
-			total.addAndGet(mResults.get(option).size());
-		}
-		return total.get();
 	}
 
 	private String getBiggest() {
 		AtomicReference<String> max = new AtomicReference<>();
 
 		for(String option : mResults.keySet()) {
-			if (max.get() == null || mResults.get(option).size() > mResults.get(max.get()).size())
+			if (mResults.get(option) != null && (max.get() == null || mResults.get(option).size() > mResults.get(max.get()).size()))
 				max.set(option);
 		}
 		return max.get();
@@ -188,19 +186,20 @@ public class STVStation {
 
 		while(winners.size() < positions) {
 			String winner = getWinner(positions);
-			Queue<Ballot> redistributeVotes;
+			Queue<Ballot> redistributionVotes;
 
 			if(winner != null) {
 				winners.add(winner);
 				shuffleBallots(winner);
-				removeExtraVotes(winner,positions);
-				redistributeVotes = mResults.get(winner);
+				removeExtraVotes(winner);
+				redistributionVotes = mResults.get(winner);
+				mResults.remove(winner);
 
 			} else
-				redistributeVotes = removeBiggestLoser();
+				redistributionVotes = removeBiggestLoser();
 
-			move(redistributeVotes);
-			redistributeVotes(redistributeVotes);
+			move(redistributionVotes);
+			redistributeVotes(redistributionVotes);
 		}
 		return winners;
 	}
