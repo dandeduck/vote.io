@@ -16,11 +16,13 @@ public class STVStation {
 
 	private Map<Option, Queue<Ballot>> mResults;
 
-	public STVStation(Queue<Ballot> ballots) {
+	public STVStation() {
 		mResults = new HashMap<>();
-		mTotalVotes = ballots.size();
+	}
 
+	public void setBallots(Queue<Ballot> ballots) {
 		distributeVotes(ballots);
+		mTotalVotes = ballots.size();
 	}
 
 	private void distributeVotes(Queue<Ballot> ballots) {
@@ -173,6 +175,9 @@ public class STVStation {
 	public Queue<Option> calculate(int positions) {
 		Set<Option> candidates = mResults.keySet();
 		Queue<Option> winners = new ArrayDeque<>();
+
+		if(mResults.isEmpty())
+			return null; //Maybe throw a custom Exception
 
 		if(positions >= candidates.size())
 			return new ArrayDeque<>(candidates);
