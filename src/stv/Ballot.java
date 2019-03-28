@@ -1,6 +1,7 @@
 package stv;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Ballot {
 	private Queue<Option> mOptions;
@@ -39,14 +40,14 @@ public class Ballot {
 	}
 
 	public String toString() {
-		String options = "";
+		AtomicReference<String> options = new AtomicReference<>("");
 
 		for(Option option :mOptions) {
-			options += option.getOption() + ",";
+			options.set(options.get() + option.getOption() + ",");
 		}
-		if(options.contains(","))
-			options = options.substring(0,options.length()-1);
+		if(options.get().contains(","))
+			options.set(options.get().substring(0, options.get().length()-1));
 
-		return options;
+		return options.get();
 	}
 }

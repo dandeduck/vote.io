@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class STVStation {
@@ -142,10 +141,12 @@ public class STVStation {
 
 	private void redistributeVotes(Queue<Ballot> ballots) {
 		for(Ballot ballot : ballots) {
-			String  option = ballot.getFirst().getOption();
+			AtomicReference<String> option = new AtomicReference<>("");
 
-			if(option != null && mResults.containsKey(option))
-				mResults.get(option).add(ballot);
+			if(ballot != null)
+				option.set(ballot.getFirst().getOption());
+				if(mResults.containsKey(option))
+					mResults.get(option).add(ballot);
 		}
 	}
 
