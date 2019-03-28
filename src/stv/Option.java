@@ -17,6 +17,10 @@ public class Option {
 	public int getPlace() {
 		return mPlace;
 	}
+
+	public String getOption() {
+		return mOption;
+	}
 	
 	private void setPlace(int place, int lastPlace) throws Exception {
 		if(place <= 0 || place > lastPlace)
