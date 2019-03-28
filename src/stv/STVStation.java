@@ -143,16 +143,20 @@ public class STVStation {
 		for(Ballot ballot : ballots) {
 			AtomicReference<String> option = new AtomicReference<>("");
 
-			if(ballot != null)
-				option.set(ballot.getFirst().getOption());
-				if(mResults.containsKey(option))
-					mResults.get(option).add(ballot);
+			if(ballot != null) {
+				option.set(ballot.getFirst() == null ? "" : ballot.getFirst().getOption());
+				if(!option.get().equals(""))
+					if (mResults.containsKey(option.get()))
+						mResults.get(option.get()).add(ballot);
+					else
+						move(ballots);
+			}
 		}
 	}
 
-	private String getWinner(int positions) {
+	private String getWinner() {
 		String biggest = getBiggest();
-		int winningAmount = (int) (mTotalVotes * (1.0 / (double) positions));
+		int winningAmount = (int) (mTotalVotes * (1.0 / (double) mCandidates));
 
 		if(mResults.size() == 1 || mResults.get(biggest).size() >= winningAmount)
 			return biggest;
@@ -186,7 +190,7 @@ public class STVStation {
 			return new ArrayDeque<>(candidates);
 
 		while(winners.size() < positions) {
-			String winner = getWinner(positions);
+			String winner = getWinner();
 			Queue<Ballot> redistributionVotes;
 
 			if(winner != null) {
