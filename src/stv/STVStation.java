@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class STVStation {
 	private int mTotalVotes;
 
-	private Map<Option, Queue<Ballot>> mResults;
+	private Map<String, Queue<Ballot>> mResults;
 
 	public STVStation() {
 		mResults = new HashMap<>();
@@ -27,7 +27,7 @@ public class STVStation {
 
 	private void distributeVotes(Queue<Ballot> ballots) {
 		for(Ballot ballot : ballots) {
-			Option key = ballot.getFirst();
+			String key = ballot.getFirst().getOption();
 
 			if(!mResults.containsKey(key))
 				mResults.put(key,new ArrayDeque<>());
@@ -56,19 +56,23 @@ public class STVStation {
 
 	private boolean isInGroups(List<Queue<Ballot>> groups, Ballot ballot) {
 		for(Queue<Ballot> group : groups) {
-			if(group.contains(ballot))
-				return true;
+			for(Ballot item : group) {
+				if(item.toString().equals(ballot.toString()))
+					return true;
+			}
 		}
 		return false;
 	}
 
-	private void shuffleBallots(Option option) {
+	private void shuffleBallots(String option) {
 		List<Queue<Ballot>> ballotGroups = extractGroups(mResults.get(option));
 		Queue<Ballot> result = new ArrayDeque<>();
 
+		System.out.println(ballotGroups);
+
 		while(!isEmpty(ballotGroups)) {
 			for(Queue<Ballot> group : ballotGroups) {
-				while(isTurn(ballotGroups,group.size())) {
+				while(!group.isEmpty() && isTurn(ballotGroups,group.size())) {
 					result.add(group.poll());
 				}
 			}
@@ -101,11 +105,11 @@ public class STVStation {
 		return true;
 	}
 
-	private int getVotes(Option option) {
+	private int getVotes(String option) {
 		return mResults.get(option).size();
 	}
 
-	private void removeExtraVotes(Option option, int positions) {
+	private void removeExtraVotes(String option, int positions) {
 		int totalVotes = getVotes(option);
 		int extraVotes =  (int) (totalVotes - mTotalVotes * (1.0/positions));
 
@@ -115,9 +119,9 @@ public class STVStation {
 	}
 
 	private Queue<Ballot> removeBiggestLoser() {
-		AtomicReference<Option> loser = new AtomicReference<>();
+		AtomicReference<String> loser = new AtomicReference<>();
 
-		for(Option key : mResults.keySet()) {
+		for(String key : mResults.keySet()) {
 			if(loser.get() == null || getVotes(key) < getVotes(loser.get())) {
 				loser.set(key);
 			}
@@ -131,36 +135,36 @@ public class STVStation {
 
 	private void redistributeVotes(Queue<Ballot> ballots) {
 		for(Ballot ballot : ballots) {
-			Option option = ballot.getFirst();
+			String  option = ballot.getFirst().getOption();
 
 			if(option != null)
 				mResults.get(option).add(ballot);
 		}
 	}
 
-	private Option getWinner(int positions) {
-		Option biggest = getBiggest();
+	private String getWinner(int positions) {
+		String biggest = getBiggest();
 		int winningAmount = (int) (mTotalVotes * (1.0 / (double) positions));
 
-		if(getTotatlVotes() <= winningAmount || mResults.get(biggest).size() >= winningAmount)
+		if(getTotalVotes() <= winningAmount || mResults.get(biggest).size() >= winningAmount)
 			return biggest;
 		else
 			return null;
 	}
 
-	private int getTotatlVotes() {
+	private int getTotalVotes() {
 		AtomicInteger total = new AtomicInteger();
 
-		for(Option option : mResults.keySet()) {
+		for(String option : mResults.keySet()) {
 			total.addAndGet(mResults.get(option).size());
 		}
 		return total.get();
 	}
 
-	private Option getBiggest() {
-		AtomicReference<Option> max = new AtomicReference<>();
+	private String getBiggest() {
+		AtomicReference<String> max = new AtomicReference<>();
 
-		for(Option option : mResults.keySet()) {
+		for(String option : mResults.keySet()) {
 			if (max.get() == null || mResults.get(option).size() > mResults.get(max.get()).size())
 				max.set(option);
 		}
@@ -172,18 +176,18 @@ public class STVStation {
 			ballot.move();
 	}
 
-	public Queue<Option> calculate(int positions) {
-		Set<Option> candidates = mResults.keySet();
-		Queue<Option> winners = new ArrayDeque<>();
+	public Queue<String> calculate(int positions) {
+		Set<String> candidates = mResults.keySet();
+		Queue<String> winners = new ArrayDeque<>();
 
 		if(mResults.isEmpty())
-			return null; //Maybe throw a custom Exception
+			return null; //Maybe throw a custom Exception here
 
 		if(positions >= candidates.size())
 			return new ArrayDeque<>(candidates);
 
 		while(winners.size() < positions) {
-			Option winner = getWinner(positions);
+			String winner = getWinner(positions);
 			Queue<Ballot> redistributeVotes;
 
 			if(winner != null) {

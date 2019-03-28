@@ -22,13 +22,12 @@ public class Ballot {
 		for(Option option : unsorted){
 			int place = option.getPlace()-1;
 
-			System.out.println(tmp + " "+place);
 			tmp.remove(place);
 			tmp.add(place, option);
 		}
 		return new ArrayDeque<>(tmp);
 	}
-	
+
 	private void initList(List<Option> options, int size) {
 		for(int i = 0; i < size; ++i) {
 			options.add(i, null);
@@ -37,5 +36,16 @@ public class Ballot {
 
 	public Option getFirst() {
 		return mOptions.peek();
+	}
+
+	public String toString() {
+		String options = "";
+
+		for(Option option :mOptions) {
+			options += option.getOption() + ",";
+		}
+		options = options.substring(0,options.length()-1);
+
+		return options;
 	}
 }
